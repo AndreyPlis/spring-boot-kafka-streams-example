@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka
+  labels:
+    app: kafka
+data:
+  KAFKA_ADVERTISED_PORT: "9092"
+  KAFKA_ADVERTISED_HOST_NAME: kafka-1
+  KAFKA_ZOOKEEPER_CONNECT:  zookeeper-1:2181
+  KAFKA_BROKER_ID:  "1"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+data:
+  POSTGRES_DB: test-db
+  PGDATA: /var/lib/postgresql/data/pgdata
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zookeeper-1
+  labels:
+    app: zookeeper-1
+data:
+  ZOOKEEPER_CLIENT_PORT: "2181"
+  ZOOKEEPER_TICK_TIME: "2000"
+  ZOOKEEPER_ID: "1"
+  ZOOKEEPER_SERVER_1: zookeeper-1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis
+data:
+  redis-config: |
+    requirepass pass

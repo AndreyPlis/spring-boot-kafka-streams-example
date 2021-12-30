@@ -1,0 +1,109 @@
+plugins {
+    id 'base'
+    id 'org.sonarqube'
+    id 'io.spring.dependency-management' apply false
+    id 'org.springframework.boot' apply false
+    id 'com.google.cloud.tools.jib' apply false
+    id 'org.jetbrains.kotlin.jvm' apply false
+    id 'org.jetbrains.kotlin.plugin.spring' apply false
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'jacoco'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'com.google.cloud.tools.jib'
+    apply plugin: 'org.jetbrains.kotlin.jvm'
+    apply plugin: 'org.jetbrains.kotlin.plugin.spring'
+
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+
+    dependencyManagement {
+        imports {
+            mavenBom("org.springframework.boot:spring-boot-dependencies:$VERSION_OF_SPRING_BOOT")
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:$VERSION_OF_SPRING_CLOUD"
+        }
+
+        dependencies {
+
+            dependency 'org.jeasy:easy-random-core:5.0.0'
+            dependency "com.fasterxml.jackson.module:jackson-module-kotlin:2.13.+"
+
+
+            //Mapstruct
+            dependency "org.mapstruct:mapstruct:$VERSION_OF_MAPSTRUCT"
+            dependency "org.mapstruct:mapstruct-processor:$VERSION_OF_MAPSTRUCT"
+            //Apache commons
+            dependency "org.apache.commons:commons-lang3:$VERSION_OF_APACHE_COMMONS_LANG"
+            dependency "org.apache.commons:commons-collections4:$VERSION_OF_APACHE_COMMONS_COLLECTIONS"
+            //Micrometer
+            dependency "io.micrometer:micrometer-core:$VERSION_OF_MICROMETER"
+            //Logback
+            dependency "ch.qos.logback:logback-classic:$VERSION_OF_LOGBACK"
+            dependency "net.logstash.logback:logstash-logback-encoder:$VERSION_OF_LOGSTASH_LOGBACK_ENCODER"
+        }
+    }
+
+    dependencies {
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    }
+
+
+    compileJava {
+        options.encoding = 'UTF-8'
+        options.compilerArgs += [
+                '-Amapstruct.defaultComponentModel=spring'
+        ]
+    }
+
+    test {
+        systemProperty 'spring.profiles.active', 'test'
+        systemProperty 'user.language', 'ru'
+        systemProperty 'user.country', 'RU'
+
+        useJUnitPlatform()
+
+        finalizedBy jacocoTestReport
+        jacocoTestReport {
+            dependsOn test
+            reports {
+                xml.enabled true
+                csv.enabled false
+                html.enabled true
+            }
+        }
+
+        failFast = System.getProperty('failFast') != null
+        maxParallelForks = 1
+    }
+}
+
+sonarqube {
+    properties {
+        property 'sonar.sourceEncoding', 'UTF-8'
+        property 'sonar.java.source', JavaVersion.VERSION_11
+        property 'sonar.java.libraries', "$buildDir/classes"
+        property 'sonar.branch.name', "git branch --show-current".execute().in.getText()
+
+        //Sonar exclusions
+        property 'sonar.exclusions',
+                '**/*/package-info.java, '
+    }
+}
+
+rootProject.wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+    gradleVersion = VERSION_OF_GRADLE
+}
+

@@ -1,0 +1,52 @@
+app:
+  kafka:
+    binders:
+      shipment-advanced-notification-binder-name: shipmentAdvancedNotificationProcess-out-0
+
+
+server:
+  port: ${spring.application.port}
+  servlet:
+    encoding:
+      force-response: true
+      charset: UTF-8
+
+kafka:
+  broker: ${KAFKA_BROKER}
+  producer:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+spring:
+  application:
+    name: zfrontmock
+    port: ${SPRING_APPLICATION_PORT}
+  main:
+    banner-mode: 'off'
+  jmx:
+    enabled: false
+  cloud:
+    stream:
+      source: shipmentAdvancedNotificationProcess
+      function:
+        definition: shipmentAdvancedNotificationProcess
+      bindings:
+        shipmentAdvancedNotificationProcess-out-0:
+          binder: kafka-external
+          destination: shipment-advanced-notification
+      kafka:
+        binder:
+          brokers: ${kafka.broker}
+      binders:
+        kafka-external:
+          defaultCandidate: false
+          type: kafka
+          environment.spring.cloud.stream.kafka:
+            binder:
+              brokers: ${kafka.producer.bootstrap-servers}
+              producer-properties:
+                delivery.timeout.ms: 2000
+                request.timeout.ms: 2000
+
+logging:
+  config: classpath:logback-spring.xml
+
+

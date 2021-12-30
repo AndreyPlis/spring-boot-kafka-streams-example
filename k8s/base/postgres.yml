@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app:  postgres
+  serviceName: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:11-alpine
+          volumeMounts:
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d/
+
+            - name: postgres
+              mountPath: /var/lib/postgresql/data/pgdata
+              subPath: postgres-db
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres
+            - secretRef:
+                name: postgres
+      volumes:
+        - name: init-sql
+          configMap:
+            name: init.sql
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  ports:
+    - name: postgres
+      port: 5432
+  selector:
+    app: postgres

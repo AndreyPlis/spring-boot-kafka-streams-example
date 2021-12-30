@@ -1,0 +1,356 @@
+kind: Template
+apiVersion: v1
+metadata:
+    name: ${NAME}
+annotations:
+    description: mock-service
+labels:
+    app: ${NAME}
+objects:
+    - kind: DeploymentConfig
+      apiVersion: v1
+      metadata:
+          labels:
+              app: ${NAME}
+          name: ${NAME}
+      spec:
+          replicas: ${{REPLICAS}}
+          revisionHistoryLimit: 10
+          selector:
+              app: ${NAME}
+              deploymentconfig: ${NAME}
+          strategy:
+              activeDeadlineSeconds: 21600
+              resources: {}
+              rollingParams:
+                  intervalSeconds: 1
+                  maxSurge: 25%
+                  maxUnavailable: 25%
+                  timeoutSeconds: 600
+                  updatePeriodSeconds: 1
+              type: Rolling
+          template:
+              metadata:
+                  labels:
+                      app: ${NAME}
+                      deploymentconfig: ${NAME}
+              spec:
+                  volumes:
+                      - name: ${NAME}
+                        configMap:
+                            name: mock-service
+                      - name: ${NAME}-fluentbit-secret-volume
+                        secret:
+                            secretName: logging-pki-client
+                      - name: ${NAME}-jaeger-secret-volume
+                        secret:
+                            secretName: jaeger-agent-tls
+                            defaultMode: 420
+                      - name: ${NAME}-cert-volume
+                        secret:
+                            secretName: ${NAME}
+                            items:
+                            - key: kafka.keystore
+                              path: kafka.keystore
+                            - key: kafka.truststore
+                              path: kafka.truststore
+                  containers:
+                      - env:
+                        - name: TZ
+                          value: Europe/Moscow
+                        - name: KAFKA_SSL_TRUST_STORE_PASSWORD
+                          valueFrom:
+                            secretKeyRef:
+                              name: ${NAME}
+                              key: KAFKA_SSL_TRUST_STORE_PASSWORD
+                        - name: KAFKA_SSL_KEY_STORE_PASSWORD
+                          valueFrom:
+                            secretKeyRef:
+                              name: ${NAME}
+                              key: KAFKA_SSL_KEY_STORE_PASSWORD
+                        - name: DB_PASSWORD
+                          valueFrom:
+                            secretKeyRef:
+                              name: ${NAME}
+                              key: DB_PASSWORD
+                        - name: DB_USER
+                          valueFrom:
+                            secretKeyRef:
+                              name: ${NAME}
+                              key: DB_USER
+                        image: ${REGISTRY_URL}/${IMAGE}:${VERSION}
+                        imagePullPolicy: Always
+                        volumeMounts:
+                            - name: ${NAME}
+                              mountPath: /home/jboss/application.yml
+                              subPath: application.yml
+                            - name: ${NAME}-fluentbit-secret-volume
+                              mountPath: /fluent-bit/etc/cert
+                            - name: ${NAME}-cert-volume
+                              mountPath: /etc/pki/
+                        name: ${NAME}
+                        ports:
+                            - containerPort: ${{TARGET_PORT}}
+                              protocol: TCP
+                            - containerPort: 2020
+                        resources:
+                          requests:
+                            cpu: 50m
+                            memory: 50Mi
+                          limits:
+                            cpu: 100m
+                            memory: 256Mi
+                        lifecycle:
+                          preStop:
+                            exec:
+                              command: ["sh", "-c", "sleep 20"]
+                        livenessProbe:
+                            failureThreshold: 8
+                            httpGet:
+                                path: /actuator/health/liveness
+                                port: ${{PORT}}
+                                scheme: HTTP
+                            initialDelaySeconds: 30
+                            successThreshold: 1
+                            timeoutSeconds: 4
+                        readinessProbe:
+                            failureThreshold: 4
+                            httpGet:
+                                path: /actuator/health/readiness
+                                port: ${{PORT}}
+                                scheme: HTTP
+                            initialDelaySeconds: 10
+                            periodSeconds: 5
+                            successThreshold: 1
+                            timeoutSeconds: 5
+                        resources:
+                            limits:
+                                cpu: ${{CPU_LIMIT}}
+                                memory: ${{MEMORY_LIMIT}}
+                            requests:
+                                cpu: ${{CPU_REQ}}
+                                memory: ${{MEMORY_REQ}}
+                        terminationMessagePath: /dev/termination-log
+                        terminationMessagePolicy: File
+                        envFrom:
+                            - configMapRef:
+                                  name: ${NAME}
+                      - image: ${REGISTRY_URL_FLUENTBIT}/fluent/fluent-bit:1.6-debug
+                        name: fluent-bit
+                        imagePullPolicy: Always
+                        env:
+                          - name: TZ
+                            value: Europe/Moscow
+                          - name: LOG_LEVEL
+                            valueFrom:
+                              configMapKeyRef:
+                                name: ${NAME}
+                                key: FB_LOG_LEVEL
+                          - name: KAFKA_BROKER
+                            valueFrom:
+                              configMapKeyRef:
+                                name: ${NAME}
+                                key: LOG_KAFKA_BROKER
+                          - name: KAFKA_TOPICS
+                            valueFrom:
+                              configMapKeyRef:
+                                name: ${NAME}
+                                key: LOG_KAFKA_TOPICS
+                          - name: ES_INDEX_NAME_SUFFIX
+                            valueFrom:
+                              configMapKeyRef:
+                                name: ${NAME}
+                                key: LOG_ES_INDEX_NAME_SUFFIX
+                          - name: CLIENT_KAFKA_CERT_KEY_PASSWORD
+                            valueFrom:
+                              secretKeyRef:
+                                name: logging-pki-pass-client
+                                key: client-kafka-cert-key-password
+                          - name: NODE_NAME
+                            valueFrom:
+                              fieldRef:
+                                fieldPath: spec.nodeName
+                          - name: POD_NAME
+                            valueFrom:
+                              fieldRef:
+                                fieldPath: metadata.name
+                          - name: POD_NAMESPACE
+                            valueFrom:
+                              fieldRef:
+                                fieldPath: metadata.namespace
+                          - name: POD_IP
+                            valueFrom:
+                              fieldRef:
+                                fieldPath: status.podIP
+                      - image: ${REGISTRY_URL_JAEGER}/distributed-tracing/jaeger-agent-rhel8:1.20.2
+                        name: jaeger-agent
+                        imagePullPolicy: IfNotPresent
+                        env:
+                            - name: REPORTER_GRPC_TLS_ENABLED
+                              value: "true"
+                            - name: REPORTER_GRPC_TLS_CA
+                              value: /opt/jaeger/cert/ca-cert.pem
+                            - name: REPORTER_GRPC_TLS_CERT
+                              value: /opt/jaeger/cert/client-cert.pem
+                            - name: REPORTER_GRPC_TLS_KEY
+                              value: /opt/jaeger/cert/client-cert-key.pem
+                            - name: REPORTER_GRPC_TLS_SERVER_NAME
+                              value: ${JAEGER_COLLECTOR_HOST}
+                            - name: REPORTER_GRPC_TLS_SKIP_HOST_VERIFY
+                              value: "true"
+                        args:
+                            - >-
+                              --reporter.grpc.host-port=dns:///${JAEGER_COLLECTOR_HOST}:${JAEGER_COLLECTOR_PORT}
+                            - '--reporter.type=grpc'
+                            - "--log-level=debug"
+                        ports:
+                            - containerPort: 5775
+                              name: zk-compact-trft
+                              protocol: UDP
+                            - containerPort: 5778
+                              name: config-rest
+                              protocol: TCP
+                            - containerPort: 6831
+                              name: jg-compact-trft
+                              protocol: UDP
+                            - containerPort: 6832
+                              name: jg-binary-trft
+                              protocol: UDP
+                            - containerPort: 14271
+                              name: admin-http
+                              protocol: TCP
+                        volumeMounts:
+                            - name: ${NAME}-jaeger-secret-volume
+                              readOnly: true
+                              mountPath: /opt/jaeger/cert/ca-cert.pem
+                              subPath: ca-cert.pem
+                            - name: ${NAME}-jaeger-secret-volume
+                              readOnly: true
+                              mountPath: /opt/jaeger/cert/client-cert.pem
+                              subPath: client-cert.pem
+                            - name: ${NAME}-jaeger-secret-volume
+                              readOnly: true
+                              mountPath: /opt/jaeger/cert/client-cert-key.pem
+                              subPath: client-cert-key.pem
+                        resources:
+                          requests:
+                              cpu: 50m
+                              memory: 50Mi
+                          limits:
+                              cpu: 500m
+                              memory: 256Mi   
+                   
+                  dnsConfig:
+                      options:
+                          - name: single-request
+                  dnsPolicy: ClusterFirst
+                  restartPolicy: Always
+                  schedulerName: default-scheduler
+                  securityContext: {}
+                  terminationGracePeriodSeconds: 30
+          test: false
+          triggers:
+              - type: ConfigChange
+
+    - kind: Service
+      apiVersion: v1
+      metadata:
+          name: ${NAME}
+      labels:
+          app: ${NAME}
+          name: ${NAME}
+      annotations:
+          description: Service for ${NAME}
+      spec:
+          ports:
+              - name: ${PORT}-tcp
+                port: ${{PORT}}
+                protocol: TCP
+                targetPort: ${{TARGET_PORT}}
+          selector:
+              app: ${NAME}
+              deploymentconfig: ${NAME}
+          sessionAffinity: None
+          type: ClusterIP
+      status:
+          loadBalancer: {}
+
+    - kind: Route
+      apiVersion: v1
+      metadata:
+          annotations:
+              haproxy.router.openshift.io/timeout: 360s
+          name: ${NAME}
+      labels:
+          app: ${NAME}
+          name: ${NAME}
+      spec:
+          host: ${HOST}
+          port:
+              targetPort: ${TARGET_PORT}-tcp
+          tls:
+              termination: edge
+              insecureEdgeTerminationPolicy: Allow
+          to:
+              kind: Service
+              name: ${NAME}
+              weight: 100
+          wildcardPolicy: None
+parameters:
+    - name: REGISTRY_URL
+      description: Адрес docker registry
+      required: true
+    - description: Host for the application
+      displayName: Host
+      name: HOST
+      required: true
+    - name: REGISTRY_URL_FLUENTBIT
+      description: Адрес docker registry FluentBit
+      required: true
+    - name: JAEGER_COLLECTOR_HOST
+      description: Адрес Jaeger Collector URL
+      required: true
+    - name: JAEGER_COLLECTOR_PORT
+      description: Адрес Jaeger Collector Port
+      required: true
+    - name: REGISTRY_URL_JAEGER
+      description: Адрес docker registry Jaeger
+      required: true
+    - description: Port for the application
+      displayName: Port
+      name: PORT
+      required: true
+    - description: Target Port for the application
+      displayName: Target port
+      name: TARGET_PORT
+      required: true
+    - description: Version of the application
+      displayName: Version
+      name: VERSION
+      required: true
+      value: latest
+    - name: NAME
+      description: name of service
+      required: true
+    - name: IMAGE
+      description: image of service
+      required: true
+    - description: replicas for the application
+      displayName: Replicas
+      name: REPLICAS
+      required: true
+    - description:  CPU limit
+      displayName: CPU_LIMIT
+      name: CPU_LIMIT
+      required: true
+    - description: memory limit
+      displayName: MEMORY_LIMIT
+      name: MEMORY_LIMIT
+      required: true
+    - description: cpu requests
+      displayName: CPU__REQ
+      name: CPU_REQ
+      required: true
+    - description:  memory requests
+      displayName: MEMORY_REQ
+      name: MEMORY_REQ

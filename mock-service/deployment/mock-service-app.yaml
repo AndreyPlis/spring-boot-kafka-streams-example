@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-service
+  labels:
+    app: mock-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mock-service
+  template:
+    metadata:
+      labels:
+        app: mock-service
+    spec:
+      containers:
+        - name: mock-service
+          image: mock-service
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            failureThreshold: 8
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 4
+          readinessProbe:
+            failureThreshold: 4
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          envFrom:
+            - configMapRef:
+                name: mock-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-service
+  labels:
+    app: mock-service
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+  selector:
+    app: mock-service

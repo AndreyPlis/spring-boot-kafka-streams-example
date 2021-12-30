@@ -1,0 +1,56 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: zookeeper-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper-1
+  serviceName: zookeeper-1
+  template:
+    metadata:
+      labels:
+        app: zookeeper-1
+    spec:
+      containers:
+        - name: zookeeper-1
+          image: digitalwonderland/zookeeper
+          ports:
+            - containerPort: 2181
+          envFrom:
+            - configMapRef:
+                name: zookeeper-1
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/zookeeper
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-1
+  labels:
+    app: zookeeper-1
+spec:
+  ports:
+    - name: client
+      port: 2181
+      protocol: TCP
+    - name: follower
+      port: 2888
+      protocol: TCP
+    - name: leader
+      port: 3888
+      protocol: TCP
+  selector:
+    app: zookeeper-1

@@ -1,0 +1,4 @@
+# Project exclude paths
+/.gradle/
+/external-api/build/
+/mock-service/build/

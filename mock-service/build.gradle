@@ -1,0 +1,56 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+
+archivesBaseName = rootProject.name
+jib.from.image = 'adoptopenjdk/openjdk11'
+group 'org.example'
+version '1.0.0-SNAPSHOT'
+
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+
+    implementation "org.springframework.boot:spring-boot-starter-webflux"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
+    implementation "io.projectreactor.kotlin:reactor-kotlin-extensions"
+    implementation "org.jetbrains.kotlin:kotlin-reflect"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-reactor"
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "io.projectreactor:reactor-test"
+
+    implementation project(":external-api")
+
+
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+//    implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-client'
+//    implementation "org.springframework.cloud:spring-cloud-starter-sleuth"
+    implementation "org.springframework.cloud:spring-cloud-starter-bootstrap"
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+    implementation 'org.jeasy:easy-random-core'
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
+
+
+    //Kafka
+    implementation "org.springframework.cloud:spring-cloud-stream"
+    implementation "org.springframework.cloud:spring-cloud-stream-binder-kafka"
+
+    //Jackson
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+    implementation "com.fasterxml.jackson.module:jackson-module-jaxb-annotations"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-joda"
+
+    //Mapstruct
+    implementation "org.mapstruct:mapstruct"
+    annotationProcessor "org.mapstruct:mapstruct-processor"
+
+    //Apache commons
+    implementation "org.apache.commons:commons-lang3"
+    implementation "org.apache.commons:commons-collections4"
+
+    //Validation
+    implementation "org.springframework.boot:spring-boot-starter-validation"
+}

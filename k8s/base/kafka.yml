@@ -1,0 +1,51 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: kafka-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-1
+  serviceName: kafka-1
+  template:
+    metadata:
+      labels:
+        app: kafka-1
+    spec:
+      containers:
+        - name: kafka
+          image: wurstmeister/kafka
+          ports:
+            - containerPort: 9092
+          envFrom:
+            - configMapRef:
+                name: kafka
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/kafka/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-1
+  labels:
+    name: kafka
+spec:
+  ports:
+    - port: 9092
+      name: kafka-port
+      protocol: TCP
+  selector:
+    app: kafka-1
+
+

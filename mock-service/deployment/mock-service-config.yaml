@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mock-service
+data:
+  SPRING_APPLICATION_PORT: "8080"
+  SPRING_PROFILES_ACTIVE: "default"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-1:9092"

@@ -1,0 +1,7 @@
+spring:
+  application:
+    port: 8093
+kafka:
+  broker: kafka-1
+  producer:
+    bootstrap-servers: kafka-1:9092
