@@ -9,7 +9,6 @@ resources:
   - postgres.yml
   - redis.yml
   - configmap.yml
-  - secret.yml
 configMapGenerator:
   - name: init.sql
     files:
