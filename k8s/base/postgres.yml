@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:11-alpine
+          image: library/postgres:12.4-alpine
           volumeMounts:
             - name: init-sql
               mountPath: /docker-entrypoint-initdb.d/
@@ -58,3 +58,21 @@ spec:
       port: 5432
   selector:
     app: postgres
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+data:
+  POSTGRES_DB: test-db
+  PGDATA: /var/lib/postgresql/data/pgdata
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres
+stringData:
+  POSTGRES_USER: admin
+  POSTGRES_PASSWORD: admin
