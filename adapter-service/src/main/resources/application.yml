@@ -1,0 +1,118 @@
+app:
+  rest:
+    enabled: true
+  output:
+    shipment:
+      binding: shipment-out-0
+
+kafka:
+  consumer:
+    external:
+      bootstrap-servers: ${KAFKA_CONSUMER_BOOTSTRAP_SERVERS}
+    config:
+      max-attempts: 3
+      interval: 10000
+  producer:
+    internal:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+spring:
+  application:
+    name: shipment-service
+  cloud:
+    stream:
+      source: shipment
+      function:
+        definition: shipmentAdvancedNotificationProcess
+      bindings:
+        shipmentAdvancedNotificationProcess-in-0:
+          binder: kafka-external
+          destination: shipment-advanced-notification
+          group: shipment-profile
+        shipmentAdvancedNotificationProcess-out-0:
+          binder: kafka-internal
+          destination: shipment
+      binders:
+        kafka-external:
+          defaultCandidate: false
+          type: kafka
+          environment.spring.cloud.stream.kafka:
+            binder:
+              brokers: ${kafka.consumer.external.bootstrap-servers}
+              configuration:
+                auto-offset-reset: earliest
+              consumer-properties:
+                value.deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+                #                spring.json.value.default.type: org.example.event.model.Event
+                #                spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+                spring.deserializer.value.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+                spring.deserializer.value.function: org.example.adapter.config.KafkaLogFailedEventProvider
+              producer-properties:
+                value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+                key-serializer: org.apache.kafka.common.serialization.StringSerializer
+                delivery.timeout.ms: 2000
+                request.timeout.ms: 2000
+        kafka-internal:
+          defaultCandidate: false
+          type: kafka
+          environment.spring.cloud.stream.kafka:
+            binder:
+              brokers: ${kafka.producer.internal.bootstrap-servers}
+              consumer-properties:
+                value.deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+                #                spring.json.value.default.type: org.example.event.model.Event
+                #                spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+                spring.deserializer.value.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+                spring.deserializer.value.function: org.example.adapter.config.KafkaLogFailedEventProvider
+              producer-properties:
+                value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+                key-serializer: org.apache.kafka.common.serialization.StringSerializer
+                delivery.timeout.ms: 2000
+                request.timeout.ms: 2000
+
+#Actuator properties
+management:
+  endpoint:
+    prometheus:
+      enabled: true
+    metrics:
+      enabled: true
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readynessstate:
+      enabled: true
+    defaults:
+      enabled: true
+  endpoints:
+    web:
+      base-path: /actuator
+      #env is insecure, so it should be excluded from prod configuration.
+      exposure.include: health,info,prometheus,loggers,env
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  info:
+    env:
+      enabled: true
+
+logging:
+  config: classpath:logback-spring.xml
+
+server:
+  port: ${SPRING_APPLICATION_PORT}
+
+#Audit
+ms:
+  properties:
+    infoSystemCode: ipip
+    infoSystemId: 1724
+
+omni-jwt-common:
+  token-validate:
+    enable: false

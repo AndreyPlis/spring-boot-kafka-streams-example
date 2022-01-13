@@ -1,6 +1,6 @@
 package org.example.service
 
-import org.example.external.*
+import org.example.external.type.*
 import org.jeasy.random.*
 import org.springframework.beans.factory.annotation.*
 import org.springframework.cloud.stream.function.*

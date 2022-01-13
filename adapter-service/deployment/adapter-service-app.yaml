@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adapter-service
+  labels:
+    app: adapter-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adapter-service
+  template:
+    metadata:
+      labels:
+        app: adapter-service
+    spec:
+      containers:
+        - name: adapter-service
+          image: adapter-service
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            failureThreshold: 8
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 4
+          readinessProbe:
+            failureThreshold: 4
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          envFrom:
+            - configMapRef:
+                name: adapter-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adapter-service
+  labels:
+    app: adapter-service
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+  selector:
+    app: adapter-service

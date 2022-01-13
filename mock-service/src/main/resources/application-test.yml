@@ -2,7 +2,7 @@ spring:
   cloud:
     stream:
       binders:
-        kafka-zfront:
+        kafka-external:
           environment.spring.cloud.stream.kafka:
             binder:
               configuration:

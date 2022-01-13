@@ -24,6 +24,8 @@ subprojects {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'com.google.cloud.tools.jib'
     apply plugin: 'org.jetbrains.kotlin.jvm'
+    apply plugin: 'org.jetbrains.kotlin.kapt'
+
     apply plugin: 'org.jetbrains.kotlin.plugin.spring'
 
     sourceCompatibility = JavaVersion.VERSION_11
@@ -44,6 +46,7 @@ subprojects {
             //Mapstruct
             dependency "org.mapstruct:mapstruct:$VERSION_OF_MAPSTRUCT"
             dependency "org.mapstruct:mapstruct-processor:$VERSION_OF_MAPSTRUCT"
+//            kapt "org.mapstruct:mapstruct-processor:$VERSION_OF_MAPSTRUCT"
             //Apache commons
             dependency "org.apache.commons:commons-lang3:$VERSION_OF_APACHE_COMMONS_LANG"
             dependency "org.apache.commons:commons-collections4:$VERSION_OF_APACHE_COMMONS_COLLECTIONS"
@@ -52,6 +55,10 @@ subprojects {
             //Logback
             dependency "ch.qos.logback:logback-classic:$VERSION_OF_LOGBACK"
             dependency "net.logstash.logback:logstash-logback-encoder:$VERSION_OF_LOGSTASH_LOGBACK_ENCODER"
+            dependency "io.jaegertracing:jaeger-client:$VERSION_OF_JAEGER_CLIENT"
+            dependency "io.opentracing.contrib:opentracing-spring-jaeger-cloud-starter:$VERSION_OF_OPENTRACING_SPRING_JAEGER_CLOUD_STARTER"
+            dependency "com.fasterxml.uuid:java-uuid-generator:$VERSION_OF_JAVA_UUID_GENERATOR"
+
         }
     }
 

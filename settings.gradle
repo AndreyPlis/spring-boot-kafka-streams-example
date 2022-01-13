@@ -6,7 +6,9 @@ pluginManagement {
         id 'org.springframework.boot' version VERSION_OF_SPRING_BOOT
         id 'com.google.cloud.tools.jib' version VERSION_OF_JIB_PLUGIN
         id 'org.jetbrains.kotlin.jvm' version VERSION_OF_KOTLIN
+        id 'org.jetbrains.kotlin.kapt' version VERSION_OF_KOTLIN
         id 'org.jetbrains.kotlin.plugin.spring' version VERSION_OF_KOTLIN
+
     }
     repositories {
         mavenCentral()
@@ -20,4 +22,6 @@ pluginManagement {
 rootProject.name = 'spring-boot-kafka-streams-example'
 
 include 'mock-service'
+include 'adapter-service'
+include 'adapter-service-api'
 include 'external-api'

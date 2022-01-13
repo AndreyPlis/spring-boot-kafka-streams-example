@@ -1,6 +1,6 @@
 package org.example.controller
 
-import org.example.external.*
+import org.example.external.type.*
 import org.example.service.*
 import org.springframework.web.bind.annotation.*
 import javax.validation.*

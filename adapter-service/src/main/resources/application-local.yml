@@ -1,0 +1,9 @@
+kafka:
+  consumer:
+    external:
+      bootstrap-servers: kafka-1:9092
+  producer:
+    internal:
+      bootstrap-servers: kafka-1:9092
+server:
+  port: 8091

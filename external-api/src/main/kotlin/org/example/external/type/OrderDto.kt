@@ -1,4 +1,4 @@
-package org.example.external
+package org.example.external.type
 
 import java.time.*
 

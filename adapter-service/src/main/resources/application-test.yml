@@ -1,0 +1,40 @@
+spring:
+  cloud:
+    stream:
+      binders:
+        kafka-external:
+          environment.spring.cloud.stream.kafka:
+            binder:
+              configuration:
+                security:
+                  protocol: SSL
+                ssl:
+                  truststore:
+                    location: ${KAFKA_SSL_TRUST_STORE_LOCATION}
+                    password: ${KAFKA_SSL_TRUST_STORE_PASSWORD}
+                    type: ${KAFKA_SSL_TRUST_STORE_TYPE}
+                  keystore:
+                    location: ${KAFKA_SSL_KEY_STORE_LOCATION}
+                    password: ${KAFKA_SSL_KEY_STORE_PASSWORD}
+                    type: ${KAFKA_SSL_KEYSTORE_TYPE}
+        kafka-internal:
+          environment.spring.cloud.stream.kafka:
+            binder:
+              configuration:
+                security:
+                  protocol: SSL
+                ssl:
+                  truststore:
+                    location: ${KAFKA_SSL_TRUST_STORE_LOCATION}
+                    password: ${KAFKA_SSL_TRUST_STORE_PASSWORD}
+                    type: ${KAFKA_SSL_TRUST_STORE_TYPE}
+                  keystore:
+                    location: ${KAFKA_SSL_KEY_STORE_LOCATION}
+                    password: ${KAFKA_SSL_KEY_STORE_PASSWORD}
+                    type: ${KAFKA_SSL_KEYSTORE_TYPE}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        exclude: "env"

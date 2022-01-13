@@ -1,0 +1,24 @@
+apiVersion: skaffold/v2beta18
+kind: Config
+metadata:
+  name: adapter-service
+build:
+  artifacts:
+    - image: adapter-service
+      context: .
+      jib:
+        project: adapter-service
+
+deploy:
+  kustomize:
+    paths:
+      - k8s
+
+profiles:
+  - name: local
+    build:
+      local:
+        push: false
+    activation:
+      - kubeContext: docker-desktop
+
